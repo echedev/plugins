@@ -134,8 +134,8 @@ class MethodChannelVideoPlayer extends VideoPlayerPlatform {
   }
 
   @override
-  Widget buildView(int textureId) {
-    return Texture(textureId: textureId);
+  Widget buildView(int textureId, {Key? key}) {
+    return Texture(key: key, textureId: textureId);
   }
 
   @override
