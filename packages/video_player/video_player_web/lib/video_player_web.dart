@@ -148,8 +148,8 @@ class VideoPlayerPlugin extends VideoPlayerPlatform {
   }
 
   @override
-  Widget buildView(int textureId) {
-    return HtmlElementView(viewType: 'videoPlayer-$textureId');
+  Widget buildView(int textureId, {Key? key}) {
+    return HtmlElementView(key: key, viewType: 'videoPlayer-$textureId');
   }
 
   /// Sets the audio mode to mix with other sources (ignored)
