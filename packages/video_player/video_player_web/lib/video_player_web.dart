@@ -149,8 +149,13 @@ class VideoPlayerPlugin extends VideoPlayerPlatform {
 
   @override
   Widget buildView(int textureId, {String? playerId}) {
-    _videoPlayers[textureId]!.createElement(playerId!);
-    return HtmlElementView(viewType: 'videoPlayer-$playerId-$textureId');
+    if (playerId == null) {
+      return HtmlElementView(viewType: 'videoPlayer-$textureId');
+    }
+    else {
+      _videoPlayers[textureId]!.createElement(playerId);
+      return HtmlElementView(viewType: 'videoPlayer-$playerId-$textureId');
+    }
   }
 
   /// Sets the audio mode to mix with other sources (ignored)
@@ -183,10 +188,15 @@ class _VideoPlayer {
   final _videoElements = <String, VideoElement>{};
 
   void createElement(String playerId) {
+    if (_videoElements.containsKey(playerId)) {
+      return;
+    }
+
     final result = VideoElement()
       ..src = uri
       ..autoplay = false
       ..controls = false
+      ..muted = true
       ..style.border = 'none'
       ..style.height = '100%'
       ..style.width = '100%';
@@ -272,9 +282,13 @@ class _VideoPlayer {
   }
 
   Future<void> play() {
+    final position = getPosition();
     return Future.wait([
       videoElement.play(),
-      ..._videoElements.values.map((element) => element.play()).toList(),
+      ..._videoElements.values.map((element) {
+        element.currentTime = position.inMilliseconds.toDouble() / 1000;
+        return element.play();
+      }).toList(),
     ]).catchError((e) {
       // play() attempts to begin playback of the media. It returns
       // a Promise which can get rejected in case of failure to begin
@@ -303,7 +317,9 @@ class _VideoPlayer {
 
   void pause() {
     videoElement.pause();
-    _videoElements.values.forEach((element) => element.pause());
+    for (VideoElement element in _videoElements.values) {
+      element.pause();
+    }
   }
 
   void setLooping(bool value) {
@@ -352,6 +368,11 @@ class _VideoPlayer {
   void dispose() {
     videoElement.removeAttribute('src');
     videoElement.load();
+    for (var element in _videoElements.values) {
+      element.removeAttribute('src');
+      element.load();
+    }
+    _videoElements.clear();
   }
 
   List<DurationRange> _toDurationRange(TimeRanges buffered) {
