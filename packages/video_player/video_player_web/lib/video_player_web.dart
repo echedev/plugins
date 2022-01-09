@@ -149,6 +149,7 @@ class VideoPlayerPlugin extends VideoPlayerPlatform {
 
   @override
   Widget buildView(int textureId, {String? playerId}) {
+    _videoPlayers[textureId]!.createElement(playerId!);
     return HtmlElementView(viewType: 'videoPlayer-$playerId-$textureId');
   }
 
@@ -179,6 +180,30 @@ class _VideoPlayer {
     }
   }
 
+  final _videoElements = <String, VideoElement>{};
+
+  void createElement(String playerId) {
+    final result = VideoElement()
+      ..src = uri
+      ..autoplay = false
+      ..controls = false
+      ..style.border = 'none'
+      ..style.height = '100%'
+      ..style.width = '100%';
+
+    // Allows Safari iOS to play the video inline
+    result.setAttribute('playsinline', 'true');
+
+    // Set autoplay to false since most browsers won't autoplay a video unless it is muted
+    result.setAttribute('autoplay', 'false');
+
+    // TODO(hterkelsen): Use initialization parameters once they are available
+    ui.platformViewRegistry.registerViewFactory(
+        'videoPlayer-$playerId-$textureId', (int viewId) => result);
+
+    _videoElements[playerId] = result;
+  }
+  
   void initialize() {
     videoElement = VideoElement()
       ..src = uri
@@ -247,7 +272,10 @@ class _VideoPlayer {
   }
 
   Future<void> play() {
-    return videoElement.play().catchError((e) {
+    return Future.wait([
+      videoElement.play(),
+      ..._videoElements.values.map((element) => element.play()).toList(),
+    ]).catchError((e) {
       // play() attempts to begin playback of the media. It returns
       // a Promise which can get rejected in case of failure to begin
       // playback for any reason, such as permission issues.
@@ -259,10 +287,23 @@ class _VideoPlayer {
         message: exception.message,
       ));
     }, test: (e) => e is DomException);
+    // return videoElement.play().catchError((e) {
+    //   // play() attempts to begin playback of the media. It returns
+    //   // a Promise which can get rejected in case of failure to begin
+    //   // playback for any reason, such as permission issues.
+    //   // The rejection handler is called with a DomException.
+    //   // See: https://developer.mozilla.org/en-US/docs/Web/API/HTMLMediaElement/play
+    //   DomException exception = e;
+    //   eventController.addError(PlatformException(
+    //     code: exception.name,
+    //     message: exception.message,
+    //   ));
+    // }, test: (e) => e is DomException);
   }
 
   void pause() {
     videoElement.pause();
+    _videoElements.values.forEach((element) => element.pause());
   }
 
   void setLooping(bool value) {
