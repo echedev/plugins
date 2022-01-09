@@ -648,13 +648,13 @@ class _VideoAppLifeCycleObserver extends Object with WidgetsBindingObserver {
 /// Widget that displays the video controlled by [controller].
 class VideoPlayer extends StatefulWidget {
   /// Uses the given [controller] for all video rendered in this widget.
-  VideoPlayer(this.controller, {this.key});
+  VideoPlayer(this.controller, {this.playerId});
 
   /// The [VideoPlayerController] responsible for the video being rendered in
   /// this widget.
   final VideoPlayerController controller;
 
-  final Key? key;
+  final String? playerId;
     
   @override
   _VideoPlayerState createState() => _VideoPlayerState();
@@ -703,7 +703,7 @@ class _VideoPlayerState extends State<VideoPlayer> {
   Widget build(BuildContext context) {
     return _textureId == VideoPlayerController.kUninitializedTextureId
         ? Container()
-        : _videoPlayerPlatform.buildView(_textureId, key: widget.key);
+        : _videoPlayerPlatform.buildView(_textureId, playerId: widget.playerId);
   }
 }
 
